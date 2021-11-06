@@ -7,17 +7,7 @@ For any questions or bug reports, please refer to [hid_nintendo](https://github.
 
 ## Installation
 
-Install it from source with:
-
-```
-git clone https://github.com/nicman23/dkms-hid-nintendo
-cd dkms-hid-nintendo
-
-sudo dkms add .
-sudo dkms build nintendo -v 3.2
-sudo dkms install nintendo -v 3.2
-```
-
+Install using the name hid-nintendo version 1.3
 
 ## Related projects
 
