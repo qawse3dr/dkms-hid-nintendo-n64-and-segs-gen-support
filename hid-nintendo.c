@@ -484,6 +484,8 @@ struct joycon_ctlr {
 	(ctlr->hdev->product == USB_DEVICE_ID_NINTENDO_SNESCON)
 #define jc_type_is_n64con(ctlr) \
 	(ctlr->hdev->product == USB_DEVICE_ID_NINTENDO_N64)
+#define jc_type_is_segagencon(ctlr) \
+	(ctlr->hdev->product == USB_DEVICE_ID_NINTENDO_SEGAGEN)
 
 /* Does this controller have inputs associated with left joycon? */
 #define jc_type_has_left(ctlr) \
@@ -502,15 +504,16 @@ struct joycon_ctlr {
 	(jc_type_is_procon(ctlr) || \
 	 jc_type_is_chrggrip(ctlr) || \
 	 jc_type_is_snescon(ctlr)) || \
-	 jc_type_is_n64con(ctlr)
+	 jc_type_is_n64con(ctlr) || \
+	 jc_type_is_segagencon(ctlr)
 
 /* Does this controller have motion sensors */
 #define jc_has_imu(ctlr) \
-	(!jc_type_is_nescon(ctlr) && !jc_type_is_snescon(ctlr) && !jc_type_is_n64con(ctlr))
+	(!jc_type_is_nescon(ctlr) && !jc_type_is_snescon(ctlr) && !jc_type_is_n64con(ctlr) && !jc_type_is_segagencon(ctlr))
 
 /* Does this controller have rumble */
 #define jc_has_rumble(ctlr) \
-	(!jc_type_is_nescon(ctlr) && !jc_type_is_snescon(ctlr) && !jc_type_is_n64con(ctlr))
+	(!jc_type_is_nescon(ctlr) && !jc_type_is_snescon(ctlr) && !jc_type_is_n64con(ctlr) && !jc_type_is_segagencon(ctlr))
 
 static int __joycon_hid_send(struct hid_device *hdev, u8 *data, size_t len)
 {
@@ -1335,7 +1338,7 @@ static void joycon_parse_report(struct joycon_ctlr *ctlr,
 		input_report_key(dev, BTN_SOUTH, btns & JC_BTN_B);
 	}
 
-	if (jc_type_is_nescon(ctlr) || jc_type_is_snescon(ctlr) || jc_type_is_n64con(ctlr)) {
+	if (jc_type_is_nescon(ctlr) || jc_type_is_snescon(ctlr) || jc_type_is_n64con(ctlr) || jc_type_is_segagencon(ctlr)) {
 		s8 x = 0;
 		s8 y = 0;
 
@@ -1586,6 +1589,11 @@ static const unsigned int snescon_button_inputs[] = {
 	0 /* 0 signals end of array */
 };
 
+static const unsigned int segagencon_button_inputs[] = {
+	BTN_START, BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST, BTN_TL, BTN_TR, BTN_TL2, BTN_TR, BTN_TR2,
+	NULL
+};
+
 static int joycon_input_create(struct joycon_ctlr *ctlr)
 {
 	struct hid_device *hdev;
@@ -1631,8 +1639,11 @@ static int joycon_input_create(struct joycon_ctlr *ctlr)
 		imu_name = NULL;
 		break;
 	case USB_DEVICE_ID_NINTENDO_N64:
-	    hid_info(hdev, "prints type: %d\n", ctlr->ctlr_type);
 		name = "Nintendo Switch N64 Controller";
+		imu_name = NULL;
+		break;
+	case USB_DEVICE_ID_NINTENDO_SEGAGEN:
+		name = "Nintendo Switch SEGA GENESIS Controller";
 		imu_name = NULL;
 		break;
 	default: /* Should be impossible */
@@ -1690,9 +1701,16 @@ static int joycon_input_create(struct joycon_ctlr *ctlr)
 			input_set_capability(ctlr->input, EV_KEY,
 					     joycon_button_inputs_r[i]);
 	}
-	if (jc_type_is_nescon(ctlr) || jc_type_is_snescon(ctlr) || jc_type_is_n64con(ctlr)) {
-		const unsigned int* inputs = n64_button_inputs;
-
+	if (jc_type_is_nescon(ctlr) || jc_type_is_snescon(ctlr) || jc_type_is_n64con(ctlr) || jc_type_is_segagencon(ctlr)) {
+		unsigned int* inputs;
+		if(jc_type_is_n64con(ctlr))
+			inputs = n64_button_inputs;
+		else if (jc_type_is_segagencon(ctlr))
+			inputs = segagencon_button_inputs;
+		else if (jc_type_is_snescon(ctlr))
+			inputs = snescon_button_inputs;
+		else
+			inputs = nescon_button_inputs;
 		/* set up d-pad hat */
 		input_set_abs_params(ctlr->input, ABS_HAT0X,
 					 -JC_MAX_DPAD_MAG, JC_MAX_DPAD_MAG,
@@ -2256,7 +2274,7 @@ static int nintendo_hid_probe(struct hid_device *hdev,
 		goto err_mutex;
 	}
 
-	if (!jc_type_is_nescon(ctlr) && !jc_type_is_snescon(ctlr) && !jc_type_is_n64con(ctlr)) {
+	if (!jc_type_is_nescon(ctlr) && !jc_type_is_snescon(ctlr) && !jc_type_is_n64con(ctlr) && !jc_type_is_segagencon(ctlr)) {
 		/* Enable rumble */
 		ret = joycon_enable_rumble(ctlr, true);
 		if (ret) {
@@ -2352,6 +2370,12 @@ static const struct hid_device_id nintendo_hid_devices[] = {
 			 USB_DEVICE_ID_NINTENDO_SNESCON) },
 	{ HID_USB_DEVICE(USB_VENDOR_ID_NINTENDO,
 			 USB_DEVICE_ID_NINTENDO_N64) },
+	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_NINTENDO,
+			 USB_DEVICE_ID_NINTENDO_N64) },
+	{ HID_USB_DEVICE(USB_VENDOR_ID_NINTENDO,
+			 USB_DEVICE_ID_NINTENDO_SEGAGEN) },
+	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_NINTENDO,
+			 USB_DEVICE_ID_NINTENDO_SEGAGEN) },
 	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_NINTENDO,
 			 USB_DEVICE_ID_NINTENDO_SNESCON) },
 	{ }
