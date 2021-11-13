@@ -1,6 +1,6 @@
 # dkms-hid-nintendo
 
-A Nintendo HID kernel module.
+A Nintendo HID kernel module with support for the Nintendo Switch Online (NSO) N64 and Sega Genesis controllers.
 
 For any questions or bug reports, please refer to [hid_nintendo](https://github.com/DanielOgorchock/linux).
 
