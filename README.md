@@ -9,9 +9,10 @@ based on https://github.com/nadiaholmquist/linux/tree/hid-nintendo
 
 ## Installation
 
-Install using the name hid-nintendo version 1.3
-an install script is include but you will have to change it a bit to get it working but following the commands
-shouldn't be to hard
+ 1. Clone this repository to /usr/src/hid-nintendo-1.3
+ 2. Install DKMS module (change the "-k" parameter to suit your kernel): `sudo dkms install --no-depmod -m hid-nintendo -v 1.3 -k 5.15.2-arch1-1`
+ 3. Generate modules.dep and map files: `sudo depmod 5.15.2-arch1-1`
+ 4. Activate the kernel module: `sudo modprobe -v hid-nintendo`
 
 Also note this is for personal use just because I wanted to play with my controller the day I got them
 and I am sure support from a better programmer will come soon
