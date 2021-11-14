@@ -503,9 +503,9 @@ struct joycon_ctlr {
 #define jc_has_usb(ctlr) \
 	(jc_type_is_procon(ctlr) || \
 	 jc_type_is_chrggrip(ctlr) || \
-	 jc_type_is_snescon(ctlr)) || \
+	 jc_type_is_snescon(ctlr) || \
 	 jc_type_is_n64con(ctlr) || \
-	 jc_type_is_segagencon(ctlr)
+	 jc_type_is_segagencon(ctlr))
 
 /* Does this controller have motion sensors */
 #define jc_has_imu(ctlr) \
@@ -1634,8 +1634,8 @@ static int joycon_input_create(struct joycon_ctlr *ctlr)
 			imu_name = NULL;
 		}
 		break;
-	case USB_DEVICE_ID_NINTENDO_SNESCON:
-		name = "Nintendo Switch SNES Controller";
+	case USB_DEVICE_ID_NINTENDO_SNESCON: // for some reason bluetooth for genesis is mapped to snescon .... why nintendo.
+		name = "Nintendo Switch SNES/SEGA GENESIS Controller";
 		imu_name = NULL;
 		break;
 	case USB_DEVICE_ID_NINTENDO_N64:
@@ -2220,7 +2220,10 @@ static int nintendo_hid_probe(struct hid_device *hdev,
 
 	/* Initialize the controller */
 	mutex_lock(&ctlr->output_mutex);
-	/* if handshake command fails, assume ble pro controller */
+	/* if handshake command fails, assume ble pro controller 
+	 * Makes sure that the bus it not bluetooth case for n64 and sega
+	 * Controller it causes it to fail if bluetooth is used
+	 */
 	if (jc_has_usb(ctlr) && !joycon_send_usb(ctlr,
 						 JC_USB_CMD_HANDSHAKE, HZ)) {
 		hid_dbg(hdev, "detected USB controller\n");
